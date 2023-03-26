@@ -1,4 +1,5 @@
 from bjt import Bjt
+from transistors import Transistor
 VCC = 12
 
 
@@ -119,13 +120,26 @@ resistors = {
 }
 
 
+
 # smth wrong here
 bjt = Bjt("2N2222", 60)
 bjt1 = Bjt("BC107", 200)
+
+t = Transistor()
+print(type(t))
+t.add_transistor(transistor=bjt)
+
+print(t.transistors["2N2222"])
+print(t.transistors["2N2222"].hfe)
+print(t(model="2N2222"))
+
 print(bjt)
 print(bjt1)
 print(bjt1 == bjt)
 print(bjt1 > bjt)
+
+
+
 a = VDBias(**resistors)
 # a.calculate()
 # a.setup_documentation()
