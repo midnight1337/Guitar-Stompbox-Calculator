@@ -1,3 +1,8 @@
+"""
+Author: Kamil Koltowski
+E-mail: kamil.koltows@gmail.com
+Description: This tool provides ability to do all calculations for designing guitar stompboxes.
+"""
 from circuit import Circuit
 
 

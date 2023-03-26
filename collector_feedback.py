@@ -1,12 +1,12 @@
 """
-Description: This class do calculations for Collector Feedback Bias
+Description: This class do calculations for Collector Feedback Bias.
 """
 
 
 class CollectorFeedback(object):
-    def __init__(self, transistor: 'Transistor', rb: float, rc: float, re: float, vcc: int = 9):
+    def __init__(self, transistor: 'Bjt', rb: float, rc: float, re: float, vcc: int = 9):
         self.Vcc: int = vcc
-        self.transistor: 'Transistor' = transistor
+        self.transistor: 'Bjt' = transistor
         self.Rb: float = rb
         self.Rc: float = rc
         self.Re: float = re

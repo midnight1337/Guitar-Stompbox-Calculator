@@ -1,3 +1,9 @@
+"""
+Transistor is initialised in Circuit class. It initialises and represents all transistors dataclasses(Bjt)
+TransistorMeta is metaclass used to make sure, only one Transistor instance was initialised in Circuit.
+"""
+
+
 class TransistorMeta(type):
     __instance = None
 
