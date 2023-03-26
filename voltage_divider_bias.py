@@ -1,5 +1,5 @@
 from bjt import Bjt
-from transistors import Transistor
+from transistor import Transistor
 VCC = 12
 
 
