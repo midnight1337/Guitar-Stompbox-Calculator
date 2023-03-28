@@ -1,7 +1,7 @@
 from bjt import Bjt
 from transistor import Transistor
 VCC = 12
-
+# TODO: to be deleted!!!
 
 class VDBias:
     def __init__(self, rc, re, rb_1, rb_2):

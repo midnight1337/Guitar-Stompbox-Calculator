@@ -11,7 +11,7 @@ class Bjt(object):
     model: str
     hfe: int
     type: str = "NPN"
-    vbe: float = 0.6
+    vbe: float = 0.7
     internal_emitter_voltage_drop = 0.025
     # use it just as field for sorting, so you don't need to initialise it in object creation
     sort_index: int = dataclasses.field(init=False, repr=False)

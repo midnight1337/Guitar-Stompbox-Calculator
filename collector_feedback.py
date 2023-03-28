@@ -5,23 +5,19 @@ Description: This class do calculations for Collector Feedback Bias.
 
 class CollectorFeedback(object):
     def __init__(self, transistor: 'Bjt', rb: float, rc: float, re: float, vcc: int = 9):
-        self.Vcc: int = vcc
         self.transistor: 'Bjt' = transistor
         self.Rb: float = rb
         self.Rc: float = rc
         self.Re: float = re
+        self.Vcc: int = vcc
         self.documentation: dict = {}
 
-    def __str__(self):
-        return f"Collector Feedback"
-
     def read_documentation(self):
-        print(self.documentation)
+        print(f"Collector Feedback:\n", self.documentation)
 
     def write_documentation(self, ib: float, ic: float, ie: float, vb: float, vc: float, ve: float, zin: float, av: float, qpoint: dict):
         self.documentation = {
-            "Model": self.transistor.model,
-            "Hfe": self.transistor.hfe,
+            "Transistor": self.transistor,
             "Ib [uA]": ib * 1000000,
             "Ic [mA]": ic * 1000,
             "Ie [mA]": ie * 1000,
@@ -34,7 +30,7 @@ class CollectorFeedback(object):
         }
 
         for k, v in self.documentation.items():
-            if k == "Qpoint" or type(v) is str:
+            if k == "Qpoint" or type(v) is type(self.transistor):
                 continue
             self.documentation[k] = round(v, 3)
 
@@ -56,7 +52,7 @@ class CollectorFeedback(object):
         self.write_documentation(ib=Ib, ic=Ic, ie=Ie, vb=Vb, vc=Vc, ve=Ve, zin=Zin, av=Av, qpoint=Q_point)
 
     def calculate_base_current(self) -> float:
-        return (self.Vcc - self.transistor.vbe) / (self.Rb + (self.transistor.hfe + 1) * (self.Rc + self.Re))  # A to mA
+        return (self.Vcc - self.transistor.vbe) / (self.Rb + (self.transistor.hfe + 1) * (self.Rc + self.Re))
 
     def calculate_collector_current(self, base_current: float) -> float:
         return base_current * self.transistor.hfe
