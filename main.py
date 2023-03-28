@@ -24,7 +24,5 @@ resistors_blueprint = {
 
 if __name__ == "__main__":
     circuit = Circuit(transistors_blueprint=transistors_blueprint, resistors_blueprint=resistors_blueprint)
-    circuit.initialise_transistors()
-    circuit.determine_resistance()
     circuit.collector_feedback(model="2N2222")
     circuit.voltage_divider(model="2N2222")

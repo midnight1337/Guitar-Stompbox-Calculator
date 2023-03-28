@@ -6,6 +6,7 @@ class Resistor(object):
         self.rc: float = rc
         self.re: float = re
         self.multiplier: int = multiplier
+        self.determine_resistance()
 
     def __call__(self):
         # resistors = {k: v * self.multiplier for k, v in self.__dict__.items() if v is not None}
@@ -17,7 +18,6 @@ class Resistor(object):
         return self.__dict__.items()
 
     def determine_resistance(self):
-        print(self.__dict__)
         for k, v in self.__dict__.items():
             if k != 'multiplier':
                 if v is not None:

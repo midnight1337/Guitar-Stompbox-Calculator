@@ -17,15 +17,17 @@ class TransistorMeta(type):
 
 
 class Transistor(metaclass=TransistorMeta):
-    def __init__(self):
-        self.__transistors: dict = {}
+    def __init__(self, transistors_blueprint: list[tuple[str, int]]):
+        self.__transistors: dict[str, Bjt] = {}
+        self.transistors_blueprint: list[tuple[str, int]] = transistors_blueprint
+        self.initialise_bjt_transistors()
 
     def __call__(self, model: str):
         """Can use object as function"""
         return self.__transistors[model]
 
     @property
-    def transistor(self, model: str) -> dict:
+    def transistor(self, model: str) -> Bjt:
         """TODO: Propery vs __call__??"""
         return self.__transistors[model]
 
@@ -33,9 +35,12 @@ class Transistor(metaclass=TransistorMeta):
     def transistors(self) -> dict:
         return self.__transistors
 
-    def add_transistor(self, transistor: 'Bjt'):
-        if transistor.model not in self.__transistors.keys():
-            self.__transistors[transistor.model] = transistor
+    def initialise_bjt_transistors(self):
+        for q in self.transistors_blueprint:
+            new_transistor: Bjt = Bjt(*q)
+
+            if new_transistor.model not in self.__transistors.keys():
+                self.__transistors[new_transistor.model] = new_transistor
 
     def sort_transistors_by_name(self):
         # TODO: use some sorting algorithm (quick sort??)
