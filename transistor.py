@@ -27,11 +27,6 @@ class Transistor(metaclass=TransistorMeta):
         return self.__transistors[model]
 
     @property
-    def transistor(self, model: str) -> Bjt:
-        """TODO: Propery vs __call__??"""
-        return self.__transistors[model]
-
-    @property
     def transistors(self) -> dict:
         return self.__transistors
 

@@ -6,19 +6,16 @@ Description: This tool provides ability to do all calculations for designing gui
 from circuit import Circuit
 
 transistors_blueprint = [
-    ("2N2222", 60),
+    ("2N2222", 100),
     ("2N2223", 100)
 ]
 
 resistors_blueprint = {
     "rb": 410,
-    # "rc": 47,
-    # "re": 0.1,
-    # "multiplier": 10 ** 3
-    "rbc": 30,
-    "rbe": 20.9,
-    "rc": 0.15,
-    "re": 0.15,
+    "rbc": 5.6,
+    "rbe": 6.8,
+    "rc": 10,
+    "re": 4.7,
     "multiplier": 10 ** 3
 }
 
