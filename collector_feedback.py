@@ -4,7 +4,7 @@ Description: This class do calculations for Collector Feedback Bias.
 
 
 class CollectorFeedback(object):
-    def __init__(self, transistor: 'Bjt', rb: float, rc: float, re: float, vcc: int = 9):
+    def __init__(self, transistor: 'Bjt', rb: float, rc: float, re: float, vcc: int):
         self.transistor: 'Bjt' = transistor
         self.Rb: float = rb
         self.Rc: float = rc
@@ -15,7 +15,8 @@ class CollectorFeedback(object):
     def read_documentation(self):
         print(f"Collector Feedback:\n", self.documentation)
 
-    def write_documentation(self, ib: float, ic: float, ie: float, vb: float, vc: float, ve: float, zin: float, av: float, qpoint: dict):
+    def write_documentation(self, ib: float, ic: float, ie: float, vb: float, vc: float, ve: float,
+                            zin: float, av: float, q_point: dict):
         self.documentation = {
             "Transistor": self.transistor,
             "Ib [uA]": ib * 1000000,
@@ -25,31 +26,32 @@ class CollectorFeedback(object):
             "Vc [V]": vc,
             "Ve [V]": ve,
             "Zin [KOhm]": zin / 1000,
-            "Av [V]": av,
-            "Qpoint": qpoint
+            "Av(gain) [V]": av,
+            "Q_point": q_point
         }
 
         for k, v in self.documentation.items():
-            if k == "Qpoint" or type(v) is type(self.transistor):
+            if k == "Q_point" or type(v) is type(self.transistor):
                 continue
             self.documentation[k] = round(v, 3)
 
         # self.documentation = {k: round(v, 3) for k, v in self.documentation.items()}
         return self.documentation
 
-    def calculate_and_save_values(self):
-        Ib = self.calculate_base_current()
-        Ic = self.calculate_collector_current(base_current=Ib)
-        Ie = self.calculate_emitter_current(base_current=Ib, collector_current=Ic)
-        Vc = self.calculate_collector_voltage(collector_current=Ic)
-        Ve = self.calculate_emitter_volatge(emitter_current=Ie)
-        Vb = self.calculate_base_voltage(emitter_voltage=Ve)
-        Vce = self.calculate_collector_emitter_voltage(collector_voltage=Vc, emitter_voltage=Ve)
-        Q_point = self.calculate_q_point(collector_emitter_voltage=Vce, collector_current=Ic)
-        Zin = self.calculate_input_impedance(emitter_current=Ie)
-        Av = self.calculate_voltage_gain(emitter_current=Ie)
+    def calculate_and_read_values(self):
+        ib: float = self.calculate_base_current()
+        ic: float = self.calculate_collector_current(base_current=ib)
+        ie: float = self.calculate_emitter_current(base_current=ib, collector_current=ic)
+        vc: float = self.calculate_collector_voltage(collector_current=ic)
+        ve: float = self.calculate_emitter_volatge(emitter_current=ie)
+        vb: float = self.calculate_base_voltage(emitter_voltage=ve)
+        vce: float = self.calculate_collector_emitter_voltage(collector_voltage=vc, emitter_voltage=ve)
+        q_point: dict[str, str] = self.calculate_q_point(collector_emitter_voltage=vce, collector_current=ic)
+        z_in: float = self.calculate_input_impedance(emitter_current=ie)
+        av: float = self.calculate_voltage_gain(emitter_current=ie)
 
-        self.write_documentation(ib=Ib, ic=Ic, ie=Ie, vb=Vb, vc=Vc, ve=Ve, zin=Zin, av=Av, qpoint=Q_point)
+        self.write_documentation(ib=ib, ic=ic, ie=ie, vb=vb, vc=vc, ve=ve, zin=z_in, av=av, q_point=q_point)
+        self.read_documentation()
 
     def calculate_base_current(self) -> float:
         return (self.Vcc - self.transistor.vbe) / (self.Rb + (self.transistor.hfe + 1) * (self.Rc + self.Re))
@@ -73,14 +75,14 @@ class CollectorFeedback(object):
     def calculate_collector_emitter_voltage(self, collector_voltage: float, emitter_voltage: float) -> float:
         return collector_voltage - emitter_voltage
 
-    def calculate_q_point(self, collector_emitter_voltage: float, collector_current: float) -> dict:
+    def calculate_q_point(self, collector_emitter_voltage: float, collector_current: float) -> dict[str, str]:
         collector_emitter_voltage = round(collector_emitter_voltage, 3)
         collector_current = round(collector_current * 1000, 3)
-        maximum_collector_current = round((self.Vcc / (self.Rc + self.Re)) * 1000, 3)
+        collector_current_sat = round((self.Vcc / (self.Rc + self.Re)) * 1000, 3)
 
         q_point: dict = {
-            "Vce bias/VCC [V]": f"[{collector_emitter_voltage}/{self.Vcc}]",
-            "Ic/Ic max [mA]": f"[{collector_current}/{maximum_collector_current}]"
+            "Vce(bias)/Vce(cutoff) [V]": f"[{collector_emitter_voltage}/{self.Vcc}]",
+            "Ic/Ic(sat) [mA]": f"[{collector_current}/{collector_current_sat}]"
         }
         return q_point
 
@@ -101,3 +103,6 @@ class CollectorFeedback(object):
         gm = emitter_current / self.transistor.internal_emitter_voltage_drop
         r_pi = ((self.transistor.hfe + 1) / gm)
         return r_pi
+
+    def plot_q_point(self):
+        pass

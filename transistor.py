@@ -22,12 +22,12 @@ class Transistor(metaclass=TransistorMeta):
         self.transistors_blueprint: list[tuple[str, int]] = transistors_blueprint
         self.initialise_bjt_transistors()
 
-    def __call__(self, model: str):
+    def __call__(self, model: str) -> Bjt:
         """Can use object as function"""
         return self.__transistors[model]
 
     @property
-    def transistors(self) -> dict:
+    def transistors(self) -> dict[str, Bjt]:
         return self.__transistors
 
     def initialise_bjt_transistors(self):

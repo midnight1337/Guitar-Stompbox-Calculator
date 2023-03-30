@@ -4,7 +4,7 @@ Description: this class do all calculations, for Voltage Divider Bias.
 
 
 class VoltageDivider(object):
-    def __init__(self, transistor: 'Bjt', rbc: float, rbe: float, rc: float, re: float, vcc: int = 9):
+    def __init__(self, transistor: 'Bjt', rbc: float, rbe: float, rc: float, re: float, vcc: int):
         self.transistor: 'Bjt' = transistor
         self.Rbc: float = rbc
         self.Rbe: float = rbe
@@ -19,7 +19,8 @@ class VoltageDivider(object):
     def read_documentation(self):
         print(f"Voltage Divider:\n", self.documentation)
 
-    def write_documentation(self, ib: float, ic: float, ie: float, vc: float, ve: float, vb: float, irbe: float, irbc: float, vce: float, v_check: bool):
+    def write_documentation(self, ib: float, ic: float, ie: float, vc: float, ve: float, vb: float,
+                            irbe: float, irbc: float, vce: float, q_point: dict, v_check: bool):
         # TODO: change 'multiplier' to variable, it depends on actual multiplier used in resistor class
         self.documentation = {
             "Transistor": self.transistor,
@@ -32,31 +33,35 @@ class VoltageDivider(object):
             "Irbe [mA]": irbe * 1000,
             "Irbc [mA]": irbc * 1000,
             "Vce [V]": vce,
+            "Q_point": q_point,
             "Voltage check": v_check,
         }
 
         for k, v in self.documentation.items():
-            if k == "Qpoint" or type(v) is type(self.transistor):
+            if k == "Q_point" or type(v) is type(self.transistor):
                 continue
             self.documentation[k] = round(v, 3)
 
-    def calculate(self):
-        Ib = self.calculate_base_current()
-        Ic = self.calculate_collector_current(base_current=Ib)
-        Ie = self.calculate_emitter_current(base_current=Ib, collector_current=Ic)
-        Vc = self.calculate_collector_voltage(collector_current=Ic)
-        Ve = self.calculate_emitter_voltage(emitter_current=Ic)
-        Vb = self.calculate_base_voltage(emitter_voltage=Ve)
-        Irbe = self.calculate_rbe_current(base_voltage=Vb)
-        Irbc = self.calculate_rbc_current(rbe_current=Irbe, base_current=Ib)
-        Vce = self.calculate_collector_emitter_voltage(collector_voltage=Vc, emitter_voltage=Ve)
-        z_in = self.calculate_input_impedance(emitter_current=Ic)
+    def calculate_and_read_values(self):
+        ib: float = self.calculate_base_current()
+        ic: float = self.calculate_collector_current(base_current=ib)
+        ie: float = self.calculate_emitter_current(base_current=ib, collector_current=ic)
+        vc: float = self.calculate_collector_voltage(collector_current=ic)
+        ve: float = self.calculate_emitter_voltage(emitter_current=ic)
+        vb: float = self.calculate_base_voltage(emitter_voltage=ve)
+        irbe: float = self.calculate_rbe_current(base_voltage=vb)
+        irbc: float = self.calculate_rbc_current(rbe_current=irbe, base_current=ib)
+        vce: float = self.calculate_collector_emitter_voltage(collector_voltage=vc, emitter_voltage=ve)
+        z_in: float = self.calculate_input_impedance(emitter_current=ic)
+        q_point: dict[str, str] = self.determine_q_point()
+        v_check: bool = self.check_voltage_across_rbe_and_rbc(irbc_current=irbc, irbe_current=irbe)
 
-        v_check: bool = self.check_voltage_across_rbe_and_rbc(irbc_current=Irbc, irbe_current=Irbe)
-        self.write_documentation(ib=Ib, ic=Ic, ie=Ie, vc=Vc, ve=Ve, vb=Vb, irbe=Irbe, irbc=Irbc, vce=Vce, v_check=v_check)
+        self.write_documentation(ib=ib, ic=ic, ie=ie, vc=vc, ve=ve, vb=vb, irbe=irbe,
+                                 irbc=irbc, vce=vce, q_point=q_point, v_check=v_check)
+        self.read_documentation()
 
-    def calcualte_equivalent_base_resistance(self):
-        Rb = (self.Rbe * self.Rbc) / (self.Rbe + self.Rbc)
+    def calcualte_equivalent_base_resistance(self) -> float:
+        return (self.Rbe * self.Rbc) / (self.Rbe + self.Rbc)
 
     def calculate_base_current(self) -> float:
         numerator = (self.Vcc * (self.Rbe / (self.Rbe + self.Rbc)) - self.transistor.vbe)
@@ -84,28 +89,42 @@ class VoltageDivider(object):
     def calculate_rbc_current(self, rbe_current: float, base_current: float) -> float:
         return rbe_current + base_current
 
-    def calculate_collector_emitter_voltage(self, collector_voltage: float, emitter_voltage: float):
+    def calculate_collector_emitter_voltage(self, collector_voltage: float, emitter_voltage: float) -> float:
         # bias voltage
         return collector_voltage - emitter_voltage
 
-    def determine_q_point(self):
-        pass
+    def determine_q_point(self) -> dict[str, str]:
+        ic_sat = round((self.Vcc / (self.Rc + self.Re)) * 1000, 3)
+        vce_cutoff = self.Vcc
+        v_th = (self.Vcc * (self.Rbe / (self.Rbe + self.Rbc)))
+        r_th = (self.Rbe * self.Rbc) / (self.Rbe + self.Rbc)    # equivalent base resistance
+        ic = round(((v_th - self.transistor.vbe) / (self.Re + (r_th / self.transistor.hfe))) * 1000, 3)
+        vce_bias = round(self.Vcc - (ic * 1000 * (self.Rc + self.Re)), 3)
+        vb = self.transistor.vbe + (ic * self.Re)   # v_th is alternative, vb is more accurate
 
-    def calculate_input_impedance(self, emitter_current: float):
+        q_point: dict = {
+            "Vce(bias)/Vce(cutoff) [V]": f"[{vce_bias}/{vce_cutoff}]",
+            "Ic/Ic(sat) [mA]": f"[{ic}/{ic_sat}]"
+        }
+        return q_point
+
+    def calculate_input_impedance(self, emitter_current: float) -> float:
         # TODO: remove these / 1000, it depends on multiplier
-        # on going
+        # on going: with bypass cap: Zin = R1 || R2 || hfe*re
+        # without bypass cap (DC): Zin = R1 || R2 || hfe(Re + re)
         re = (25 / emitter_current) / 1000   # V/A to mV/mA
         re_eqv = (self.Re * self.Rc) / (self.Re + self.Rc)
         z_base = ((self.transistor.hfe + 1) * (re_eqv + re))
         r_bias = ((self.Rbe * self.Rbc) / (self.Rbe + self.Rbc))
 
-        print(z_base)
-        print(r_bias)
         input_impedance = ((r_bias * z_base) / (r_bias + z_base))
-        print(input_impedance)
         return input_impedance
 
     def check_voltage_across_rbe_and_rbc(self, irbc_current: float, irbe_current: float) -> bool:
         vrbc = irbc_current * self.Rbc
         vrbe = irbe_current * self.Rbe
         return bool(round((vrbc + vrbe)) == self.Vcc)
+
+    def plot_q_point(self):
+        # TODO: graphical plotting q point
+        pass
