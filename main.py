@@ -6,21 +6,16 @@ Description: This tool provides ability to do all calculations, necessary for de
 from circuit import Circuit
 
 
-transistors_blueprint = [
-    ("2N2222", 60),
-    ("2N2223", 200)
-]
-
-# transistors_blueprint = {
-#     "2N2222": {
-#         "model": "2N2222",
-#         "hfe": 60
-#     },
-#     "2N2223": {
-#         "model": "2N2223",
-#         "hfe": 200
-#     },
-# }
+transistors_blueprint = {
+    "2N2222": {
+        "model": "2N2222",
+        "hfe": 60
+    },
+    "2N2223": {
+        "model": "2N2223",
+        "hfe": 100
+    },
+}
 
 # resistors_blueprint = {
 #     "rb": 410,
@@ -33,14 +28,14 @@ transistors_blueprint = [
 
 resistors_blueprint = {
     "rb": 1,
-    "rc": 3.9,
-    "re": 3.3,
-    "rbc": 10,
-    "rbe": 4.7,
+    "rc": 5,
+    "re": 1.5,
+    "rbc": 90,
+    "rbe": 22,
     "multiplier": 10 ** 3
 }
 
 if __name__ == "__main__":
-    circuit = Circuit(transistors_blueprint=transistors_blueprint, resistors_blueprint=resistors_blueprint, vcc=15)
+    circuit = Circuit(transistors_blueprint=transistors_blueprint, resistors_blueprint=resistors_blueprint, vcc=12)
     circuit.collector_feedback(model="2N2222")
     circuit.voltage_divider(model="2N2223")

@@ -1,6 +1,7 @@
 """
 Description: this class do all calculations, for Voltage Divider Bias.
 """
+import math
 
 
 class VoltageDivider(object):
@@ -20,7 +21,8 @@ class VoltageDivider(object):
         print(f"Voltage Divider:\n", self.documentation)
 
     def write_documentation(self, ib: float, ic: float, ie: float, vc: float, ve: float, vb: float,
-                            irbe: float, irbc: float, vce: float, q_point: dict, v_check: bool):
+                            irbe: float, irbc: float, vce: float, av: float, z_in: float, z_out: float,
+                            c_in: float, c_out: float, c_emitter: float,  q_point: dict, v_check: bool):
         # TODO: change 'multiplier' to variable, it depends on actual multiplier used in resistor class
         self.documentation = {
             "Transistor": self.transistor,
@@ -33,6 +35,12 @@ class VoltageDivider(object):
             "Irbe [mA]": irbe * 1000,
             "Irbc [mA]": irbc * 1000,
             "Vce [V]": vce,
+            "Av [Gain]": av,
+            "Z_in [KOhm]": z_in,
+            "Z_out []": z_out,
+            "C_in []": c_in,
+            "C_out []": c_out,
+            "C_emitter []": c_emitter,
             "Q_point": q_point,
             "Voltage check": v_check,
         }
@@ -53,11 +61,17 @@ class VoltageDivider(object):
         irbc: float = self.calculate_rbc_current(rbe_current=irbe, base_current=ib)
         vce: float = self.calculate_collector_emitter_voltage(collector_voltage=vc, emitter_voltage=ve)
         z_in: float = self.calculate_input_impedance(emitter_current=ic)
+        z_out: float = self.calculate_output_impedance()
+        av: float = self.calculate_voltaeg_gain(z_out=z_out, emitter_current=ie)
+        c_in: float = self.calculate_input_coupling_capacitor(z_in=z_in, frequency=40)
+        c_out: float = self.calculate_output_coupling_capacitor(z_out=z_out, frequency=40)
+        c_emitter: float = self.calculate_emitter_capacitor(frequency=40)
         q_point: dict[str, str] = self.determine_q_point()
         v_check: bool = self.check_voltage_across_rbe_and_rbc(irbc_current=irbc, irbe_current=irbe)
 
         self.write_documentation(ib=ib, ic=ic, ie=ie, vc=vc, ve=ve, vb=vb, irbe=irbe,
-                                 irbc=irbc, vce=vce, q_point=q_point, v_check=v_check)
+                                 irbc=irbc, vce=vce, av=av, z_in=z_in, z_out=z_out, c_in=c_in, c_out=c_out,
+                                 c_emitter=c_emitter, q_point=q_point, v_check=v_check)
         self.read_documentation()
 
     def calcualte_equivalent_base_resistance(self) -> float:
@@ -99,8 +113,8 @@ class VoltageDivider(object):
         v_th = (self.Vcc * (self.Rbe / (self.Rbe + self.Rbc)))
         r_th = (self.Rbe * self.Rbc) / (self.Rbe + self.Rbc)    # equivalent base resistance
         ic = round(((v_th - self.transistor.vbe) / (self.Re + (r_th / self.transistor.hfe))) * 1000, 3)
-        vce_bias = round(self.Vcc - (ic * 1000 * (self.Rc + self.Re)), 3)
-        vb = self.transistor.vbe + (ic * self.Re)   # v_th is alternative, vb is more accurate
+        vce_bias = round(self.Vcc - (ic / 1000 * (self.Rc + self.Re)), 3)
+        vb = round(self.transistor.vbe + (ic / 1000 * self.Re), 3)   # v_th is alternative, vb is more accurate
 
         q_point: dict = {
             "Vce(bias)/Vce(cutoff) [V]": f"[{vce_bias}/{vce_cutoff}]",
@@ -108,17 +122,50 @@ class VoltageDivider(object):
         }
         return q_point
 
+    def calculate_voltaeg_gain(self, z_out: float, emitter_current: float):
+        """
+        With bypass capacitor Ce:   Av = Rout/re
+        Without bypass capacitor Ce:    Av = Rout/Re+re
+        """
+        re = (25 / emitter_current) / 1000
+        Av = z_out / re
+        return Av
+
     def calculate_input_impedance(self, emitter_current: float) -> float:
         # TODO: remove these / 1000, it depends on multiplier
-        # on going: with bypass cap: Zin = R1 || R2 || hfe*re
+        # with bypass cap (AC): Zin = R1 || R2 || hfe*re
         # without bypass cap (DC): Zin = R1 || R2 || hfe(Re + re)
-        re = (25 / emitter_current) / 1000   # V/A to mV/mA
-        re_eqv = (self.Re * self.Rc) / (self.Re + self.Rc)
-        z_base = ((self.transistor.hfe + 1) * (re_eqv + re))
-        r_bias = ((self.Rbe * self.Rbc) / (self.Rbe + self.Rbc))
-
-        input_impedance = ((r_bias * z_base) / (r_bias + z_base))
+        re = (25 / emitter_current) / 1000   # emitter leg resistance, V/A to mV/mA
+        z_base_ac = ((self.transistor.hfe + 1) * re)
+        z_base_dc = ((self.transistor.hfe + 1) * (self.Re + re))
+        r_th = ((self.Rbe * self.Rbc) / (self.Rbe + self.Rbc))
+        input_impedance = ((r_th * z_base_ac) / (r_th + z_base_ac)) / 1000
         return input_impedance
+
+    def calculate_output_impedance(self):
+        """
+        Zout = Rc || Rl     load is speaker or smth connected to collector of transistor
+        """
+        z_out = self.Rc
+        return z_out
+
+    def calculate_emitter_capacitor(self, frequency: int) -> float:
+        """
+        Emitter capacitor forms a high pass filter, frequencies above cutoff frequency got maximum gain
+        Rule of thumb: Xc = 1/10 of Re at desired frequency
+        """
+        xc = 0.1 * self.Re
+        c_emitter = 1 / (2 * math.pi * frequency * xc)
+        return c_emitter
+
+    def calculate_input_coupling_capacitor(self, frequency: int, z_in: float) -> float:
+        """z_in is considered only for AC application"""
+        c_in = 1 / (2 * math.pi * frequency * z_in)
+        return c_in
+
+    def calculate_output_coupling_capacitor(self, frequency: int, z_out: float) -> float:
+        c_out = 1 / (2 * math.pi * frequency * z_out)
+        return c_out
 
     def check_voltage_across_rbe_and_rbc(self, irbc_current: float, irbe_current: float) -> bool:
         vrbc = irbc_current * self.Rbc

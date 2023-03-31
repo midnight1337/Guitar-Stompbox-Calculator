@@ -8,7 +8,7 @@ from voltage_divider import VoltageDivider
 
 
 class Circuit(object):
-    def __init__(self, transistors_blueprint: list[tuple[str, int]], resistors_blueprint: dict[str, int | float], vcc: int = 9):
+    def __init__(self, transistors_blueprint: dict[str, dict[str, str | int]], resistors_blueprint: dict[str, int | float], vcc: int = 9):
         self.transistor: Transistor = Transistor(transistors_blueprint=transistors_blueprint)
         self.resistors: Resistor = Resistor(**resistors_blueprint)
         self.vcc = vcc
