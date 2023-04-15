@@ -3,39 +3,21 @@ Author: Kamil Koltowski
 E-mail: kamil.koltows@gmail.com
 Description: This tool provides ability to do all calculations, necessary for designing guitar stomp-boxes circuits.
 """
-from circuit import Circuit
+from circuit import CircuitManager
+from transistor import Transistor
+from resistor import ResistorsCollectorFeedback, ResistorsVoltageDivider
+from parts import TransistorsBlueprint, ResistorsBlueprint, Vcc
 
-
-transistors_blueprint = {
-    "2N2222": {
-        "model": "2N2222",
-        "hfe": 60
-    },
-    "2N2223": {
-        "model": "2N2223",
-        "hfe": 100
-    },
-}
-
-# resistors_blueprint = {
-#     "rb": 410,
-#     "rc": 47,
-#     "re": 0.1,
-#     "rbc": 5.6,
-#     "rbe": 6.8,
-#     "multiplier": 10 ** 3
-# }
-
-resistors_blueprint = {
-    "rb": 1,
-    "rc": 5,
-    "re": 1.5,
-    "rbc": 90,
-    "rbe": 22,
-    "multiplier": 10 ** 3
-}
 
 if __name__ == "__main__":
-    circuit = Circuit(transistors_blueprint=transistors_blueprint, resistors_blueprint=resistors_blueprint, vcc=12)
-    circuit.collector_feedback(model="2N2222")
-    circuit.voltage_divider(model="2N2223")
+    transistors = Transistor(TransistorsBlueprint().transistors)
+    resistors_voltage_divider = ResistorsVoltageDivider(**ResistorsBlueprint().resistors_voltage_divider)
+    resistors_collector_feedback = ResistorsCollectorFeedback(**ResistorsBlueprint().resistors_collector_feedback)
+
+    circuit = CircuitManager(transistors=transistors,
+                             resistors_voltage_divider=resistors_voltage_divider,
+                             resistors_collector_feedback=resistors_collector_feedback,
+                             vcc=Vcc.VCC.value)
+    circuit.calculate_voltage_divider(model="2N2222")
+    circuit.calculate_collector_feedback(model="2N2222")
+

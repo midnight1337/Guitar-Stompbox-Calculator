@@ -38,7 +38,7 @@ class CollectorFeedback(object):
         # self.documentation = {k: round(v, 3) for k, v in self.documentation.items()}
         return self.documentation
 
-    def calculate_and_read_values(self):
+    def calculate(self):
         ib: float = self.calculate_base_current()
         ic: float = self.calculate_collector_current(base_current=ib)
         ie: float = self.calculate_emitter_current(base_current=ib, collector_current=ic)
