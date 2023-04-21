@@ -17,22 +17,22 @@ class TransistorMeta(type):
 
 
 class Transistor(metaclass=TransistorMeta):
-    def __init__(self, transistors_blueprint: list[tuple[str, int]]):
+    def __init__(self, transistors_blueprint: dict[str, dict[str, str | int]]):
         self.__transistors: dict[str, Bjt] = {}
-        self.transistors_blueprint: list[tuple[str, int]] = transistors_blueprint
+        self.transistors_blueprint: dict[str, dict[str, str | int]] = transistors_blueprint
         self.initialise_bjt_transistors()
 
-    def __call__(self, model: str):
+    def __call__(self, model: str) -> Bjt:
         """Can use object as function"""
         return self.__transistors[model]
 
     @property
-    def transistors(self) -> dict:
+    def transistors(self) -> dict[str, Bjt]:
         return self.__transistors
 
     def initialise_bjt_transistors(self):
         for q in self.transistors_blueprint:
-            new_transistor: Bjt = Bjt(*q)
+            new_transistor: Bjt = Bjt(**self.transistors_blueprint[q])
 
             if new_transistor.model not in self.__transistors.keys():
                 self.__transistors[new_transistor.model] = new_transistor
@@ -43,5 +43,4 @@ class Transistor(metaclass=TransistorMeta):
             pass
 
     def sort_transistors_by_hfe(self):
-        # TODO
         pass
