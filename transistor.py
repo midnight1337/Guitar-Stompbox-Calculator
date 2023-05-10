@@ -1,8 +1,38 @@
+import dataclasses
+from parts import TransistorsBlueprint
 """
 Transistor is initialised in Circuit class. It initialises and represents all transistors dataclasses(Bjt)
 TransistorMeta is metaclass used to make sure, only one Transistor instance was initialised in Circuit.
+
+Bjt is dataclass which contains only bjt transistor parameters.
 """
-from bjt import Bjt
+
+
+@dataclasses.dataclass(order=True, frozen=True)
+class Bjt(object):
+    # order=True enables sorting objects by any value defined in __post_init__ assigned to sort_index
+    # frozen=True, read-only. It allows to make sure data is not changed anywhere in code
+    """
+    model: str - Model of a transistor
+    hfe: int - hfe/beta
+    type: str - NPN or PNP
+    vbe: float - Voltage drop between emitter and base, default 0.7
+    re: float - internal_emitter_voltage_drop, const value = 0.025 mV
+    """
+    model: str
+    hfe: int
+    type: str
+    vbe: float = 0.7
+    internal_emitter_voltage_drop: float = 0.025
+    # use it just as field for sorting, so you don't need to initialise it in object creation
+    sort_index: int = dataclasses.field(init=False, repr=False)
+
+    def __post_init__(self):
+        # self.sort_index = self.hfe      # can't assign it directly with frozen=True (it's 'read only)
+        object.__setattr__(self, 'sort_index', self.hfe)
+
+    def __str__(self) -> str:
+        return f"Model: {self.model}, Type {self.type}, Hfe: {self.hfe}, Vbe: {self.vbe}, Memory ID: {id(self)}"
 
 
 class TransistorMeta(type):
@@ -17,9 +47,9 @@ class TransistorMeta(type):
 
 
 class Transistor(metaclass=TransistorMeta):
-    def __init__(self, transistors_blueprint: dict[str, dict[str, str | int]]):
+    def __init__(self, transistors_blueprint: type(TransistorsBlueprint)):
         self.__transistors: dict[str, Bjt] = {}
-        self.transistors_blueprint: dict[str, dict[str, str | int]] = transistors_blueprint
+        self.transistors_blueprint: dict[str, dict[str, str | int]] = transistors_blueprint().transistors
         self.initialise_bjt_transistors()
 
     def __call__(self, model: str) -> Bjt:

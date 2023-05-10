@@ -3,6 +3,7 @@ Resistor is initialised in Circuit class. It represents a resistors used in bias
 ResistorMetaclass it's used as Singleton pattern, and to multiply resistor values by a multiplier.
 """
 from abc import ABC, ABCMeta, abstractmethod
+from parts import ResistorsBlueprint
 
 
 class ResistorSingleton(ABCMeta):
@@ -16,29 +17,43 @@ class ResistorSingleton(ABCMeta):
             return cls.__instance
 
 
-class Resistor(ABC, metaclass=ResistorSingleton):
+class ResistorsAbstract(ABC, metaclass=ResistorSingleton):
 
     @abstractmethod
     def __init__(self, rc: float, re: float):
         self.rc: float = rc
         self.re: float = re
 
-    def __call__(self):
-        return self.__class__.__name__
-
     @property
     def resistors(self):
         return self.__dict__
 
+    def __call__(self):
+        return self.__class__.__name__
 
-class ResistorsCollectorFeedback(Resistor):
+
+class ResistorsCollectorFeedback(ResistorsAbstract):
     def __init__(self, rb: float, rc: float, re: float):
         super().__init__(rc=rc, re=re)
-        self.rb = rb
+        self.rb: float = rb
 
 
-class ResistorsVoltageDivider(Resistor):
+class ResistorsVoltageDivider(ResistorsAbstract):
     def __init__(self, rc: float, re: float, rbc: float, rbe: float):
         super().__init__(rc=rc, re=re)
         self.rbc: float = rbc
         self.rbe: float = rbe
+
+
+class Resistor(object):
+    """This class represents a callable resistors set, for desired circuit bias"""
+    def __init__(self, resistors_blueprint: type(ResistorsBlueprint)):
+        self.__resistors_blueprint: ResistorsBlueprint = resistors_blueprint()
+
+    @property
+    def voltage_divider_bias(self):
+        return ResistorsVoltageDivider(**self.__resistors_blueprint.voltage_divider_bias).resistors
+
+    @property
+    def collector_feedback_bias(self):
+        return ResistorsCollectorFeedback(**self.__resistors_blueprint.collector_feedback_bias).resistors
