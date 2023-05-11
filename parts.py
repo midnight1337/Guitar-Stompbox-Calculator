@@ -1,3 +1,16 @@
+"""
+Date: 2023-04-15
+Description: This file provides classes that represents a particular parts in a real circuit.
+
+Class: Vcc
+Description: Voltage Supply value
+
+Class: TransistorsBlueprint
+Description: Blueprint for all transistor models
+
+Class: ResistorsBlueprint
+Description: Blueprint for resistors in particular bias circuits.
+"""
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -13,7 +26,8 @@ class TransistorsBlueprint:
         "2N2222": {
             "model": "2N2222",
             "hfe": 100,
-            "type": "NPN"
+            "type": "NPN",
+            "vbe": 0.7
         },
         "2N2223": {
             "model": "2N2223",
@@ -22,29 +36,28 @@ class TransistorsBlueprint:
         },
     })
 
-    transistors_fet = None
+    jfet: dict = field(default_factory=lambda: {None: None})
 
 
 @dataclass
 class ResistorsBlueprint:
     MULTIPLIER = 10 ** 3
 
-    voltage_divider_bias: dict[str, int | float] = field(default_factory=lambda: {
+    voltage_divider: dict[str, int | float] = field(default_factory=lambda: {
         "rc": 1.2,
         "re": 0.22,
         "rbc": 20,
         "rbe": 3.6
-    }
-                                                         )
-    collector_feedback_bias: dict[str, int | float] = field(default_factory=lambda: {
+    })
+
+    collector_feedback: dict[str, int | float] = field(default_factory=lambda: {
         "rb": 410,
         "rc": 47,
         "re": 0.1,
-    }
-                                                            )
+    })
 
     def __post_init__(self):
-        for k, v in self.voltage_divider_bias.items():
-            self.voltage_divider_bias[k] = v * self.MULTIPLIER
-        for k, v in self.collector_feedback_bias.items():
-            self.collector_feedback_bias[k] = v * self.MULTIPLIER
+        for k, v in self.voltage_divider.items():
+            self.voltage_divider[k] = v * self.MULTIPLIER
+        for k, v in self.collector_feedback.items():
+            self.collector_feedback[k] = v * self.MULTIPLIER

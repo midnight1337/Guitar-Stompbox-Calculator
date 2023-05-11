@@ -1,12 +1,27 @@
 """
-Resistor is initialised in Circuit class. It represents a resistors used in bias circuits.
-ResistorMetaclass it's used as Singleton pattern, and to multiply resistor values by a multiplier.
+Date: 2023-03-28
+Description: This file provides a different levels of resistors abstraction.
+
+Class: ResistorMeta
+Description: It's a Singleton pattern class, which allows only ONE object creation of inherited classes.
+
+Class: ResistorsAbstract
+Description: It provides an interface for particular circuit's resistors.
+
+Class: ResistorsCollectorFeedback
+Description: Contains resistors needed for Collector Feedback circuit.
+
+Class: ResistorsVoltageDivider
+Description: Contains resistors needed for Voltage Divider circuit.
+
+Class: Resistor
+Description: It provides resistor values for desired bias circuit. It's Initialised in Circuit class.
 """
 from abc import ABC, ABCMeta, abstractmethod
 from parts import ResistorsBlueprint
 
 
-class ResistorSingleton(ABCMeta):
+class ResistorMeta(ABCMeta):
     __instance = None
 
     def __call__(cls, *args, **kwargs):
@@ -17,8 +32,7 @@ class ResistorSingleton(ABCMeta):
             return cls.__instance
 
 
-class ResistorsAbstract(ABC, metaclass=ResistorSingleton):
-
+class ResistorsAbstract(ABC, metaclass=ResistorMeta):
     @abstractmethod
     def __init__(self, rc: float, re: float):
         self.rc: float = rc
@@ -46,15 +60,18 @@ class ResistorsVoltageDivider(ResistorsAbstract):
 
 
 class Resistor(object):
-    """This class represents a callable resistors set, for desired circuit bias"""
     def __init__(self, resistors_blueprint: type(ResistorsBlueprint)):
-        self.__resistors_blueprint: ResistorsBlueprint = resistors_blueprint()
+        """
+        :param resistors_blueprint:
+        """
+        self.__resistors: ResistorsBlueprint = resistors_blueprint()
+        self.__resistors_vd: ResistorsVoltageDivider = ResistorsVoltageDivider(**self.__resistors.voltage_divider)
+        self.__resistors_cf: ResistorsCollectorFeedback = ResistorsCollectorFeedback(**self.__resistors.collector_feedback)
 
     @property
-    def voltage_divider_bias(self):
-        """Return already created object which contains all resistors data"""
-        return ResistorsVoltageDivider(**self.__resistors_blueprint.voltage_divider_bias).resistors
+    def voltage_divider(self):
+        return self.__resistors_vd.resistors
 
     @property
-    def collector_feedback_bias(self):
-        return ResistorsCollectorFeedback(**self.__resistors_blueprint.collector_feedback_bias).resistors
+    def collector_feedback(self):
+        return self.__resistors_cf.resistors

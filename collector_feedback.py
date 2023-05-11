@@ -1,10 +1,23 @@
 """
-Description: This class do calculations for Collector Feedback Bias.
+
+Date: 2023-03-28
+Class: CollectorFeedbackBiasData
+Description: This dataclass is database for calculated data from CollectorFeedbackBias class.
+
+Class: CollectorFeedbackBias
+Description: This class represents Collector Feedback Bias circuit, and do all related calculations.
 """
 
 
-class CollectorFeedbackBias(object):
+class CollectorFeedback(object):
     def __init__(self, transistor: 'Bjt', rb: float, rc: float, re: float, vcc: int):
+        """
+        :param transistor:
+        :param rb:
+        :param rc:
+        :param re:
+        :param vcc:
+        """
         self.transistor: 'Bjt' = transistor
         self.Rb: float = rb
         self.Rc: float = rc
