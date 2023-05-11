@@ -3,7 +3,7 @@ Author: Kamil Koltowski
 E-mail: kamil.koltows@gmail.com
 Description: This tool provides ability to do all calculations, necessary for designing guitar stomp-boxes circuits.
 """
-from circuit import Breadboard
+from circuit import Circuit
 from transistor import Transistor
 from resistor import Resistor
 from parts import TransistorsBlueprint, ResistorsBlueprint, Vcc
@@ -24,9 +24,12 @@ from parts import TransistorsBlueprint, ResistorsBlueprint, Vcc
 def main():
     transistor = Transistor(transistors_blueprint=TransistorsBlueprint)
     resistor = Resistor(resistors_blueprint=ResistorsBlueprint)
-    circuit = Breadboard(transistor=transistor, resistor=resistor, vcc=Vcc.VCC.value)
-    circuit.calculate_voltage_divider_bias(model="2N2222")
-    circuit.calculate_collector_feedback_bias(model="2N2222")
+    circuit = Circuit(transistor=transistor, resistor=resistor, vcc=Vcc.VCC.value)
+
+    circuit.breadboard_voltage_divider_bias(model="2N2222")
+    circuit.calculate_voltage_divider_bias()
+    circuit.breadboard_collector_feedback_bias(model="2N2222")
+    circuit.calculate_collector_feedback_bias()
 
 
 if __name__ == "__main__":

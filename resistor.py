@@ -52,6 +52,7 @@ class Resistor(object):
 
     @property
     def voltage_divider_bias(self):
+        """Return already created object which contains all resistors data"""
         return ResistorsVoltageDivider(**self.__resistors_blueprint.voltage_divider_bias).resistors
 
     @property

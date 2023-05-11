@@ -1,145 +1,164 @@
-from bjt import Bjt
-from transistor import Transistor
-VCC = 12
-# TODO: to be deleted!!!
+"""
+Description: this class do all calculations, for Voltage Divider Bias.
+https://www.electronics-tutorials.ws/amplifier/common-collector-amplifier.html
+https://www.electronics-tutorials.ws/amplifier/input-impedance-of-an-amplifier.html
+"""
+from bias_circuit import BiasCircuit
+from transistor import Bjt
+import math
+import dataclasses
 
-class VDBias:
-    def __init__(self, rc, re, rb_1, rb_2):
-        self.Rc = rc
-        self.Rb_eqv = None
-        self.Re = re
-        self.Rb_1 = rb_1
-        self.Rb_2 = rb_2
-        self.Ic = None
-        self.Ib = None
-        self.Ie = None
-        self.Vc = None
-        self.Vb = None
-        self.Ve = None
-        self.Vce = None
-        self.z_in = None
-        self.Ic_max = None
-        self.Av = None
+
+@dataclasses.dataclass
+class VoltageDividerBiasDataclass:
+    """
+    ib: float = None - base current
+    ic: float = None - collector current
+    ie: float = None - emitter current
+    vc: float = None - collector voltage
+    ve: float = None - emitter voltage
+    vb: float = None - base voltage
+    irbe: float = None - current across base-emitter resistor
+    irbc: float = None - current across base-collectr resistor
+    vce: float = None - collector-emitter voltage (determines bias level of input signal)
+    av: float = None - voltage gain [dB]??
+    z_in: float = None - input impedance
+    z_out: float = None - output impedance
+    q_point: dict[str, str] = None - q-point of working transistor ()
+    """
+    ib: float = None
+    ic: float = None
+    ie: float = None
+    vc: float = None
+    ve: float = None
+    vb: float = None
+    irbe: float = None
+    irbc: float = None
+    vce: float = None
+    av: float = None
+    z_in: float = None
+    z_out: float = None
+    q_point: dict[str, str] = None
+
+
+class VoltageDividerBias(BiasCircuit):
+    def __init__(self, vcc: int, transistor: Bjt, rc: float, re: float, rbc: float, rbe: float):
+        super().__init__(vcc=vcc, transistor=transistor, rc=rc, re=re)
+        self.rbc: float = rbc
+        self.rbe: float = rbe
+        self.voltage_divider_bias_dataclass: VoltageDividerBiasDataclass = VoltageDividerBiasDataclass()
+    
+    def read_circuit_data(self) -> VoltageDividerBiasDataclass:
+        """Return all data"""
+        return self.voltage_divider_bias_dataclass
 
     def calculate(self):
-        self.calculate_equivalent_base_resistance()
-        self.calculate_base_voltage()
         self.calculate_base_current()
         self.calculate_collector_current()
         self.calculate_emitter_current()
         self.calculate_collector_voltage()
         self.calculate_emitter_voltage()
-        self.calculate_bias_voltage()
-        self.calculate_voltage_gain()
+        self.calculate_base_voltage()
+        self.calculate_rbe_current()
+        self.calculate_rbc_current()
+        self.calculate_collector_emitter_voltage()
         self.calculate_input_impedance()
-
-    def setup_documentation(self):
-        documentation = {
-            "Ib [uA]": self.Ib * 1000000,
-            "Ic [mA]": self.Ic * 1000,
-            "Ie [mA]": self.Ie * 1000,
-            "Vc [V]": self.Vc,
-            "Vb [V]": self.Vb,
-            "Ve [V]": self.Ve,
-            "Vce [V]": self.Vce,
-            "Av [Gain]": self.Av,
-            "Zin [K Ohm]": self.z_in / 1000
-        }
-        documentation = {k: round(v, 3) for k, v in documentation.items() if k != "Qpoint"}
-        print(documentation)
-
-    def calculate_equivalent_base_resistance(self):
-        self.Rb_eqv = (self.Rb_1 * self.Rb_2) / (self.Rb_1 + self.Rb_2)
-
-    def calculate_base_voltage(self):
-        # self.Vb = (VCC * self.Rb_2 / (self.Rb_1 + self.Rb_2))
-        # self.Vb = bjt.Vbe + (bjt.hfe + 1) * self.Ib * self.Re
-        self.Vb = self.Ve + bjt.Vbe
-
-    def calculate_collector_voltage(self):
-        self.Vc = VCC - (self.Ic * self.Rc)
-
-    def calculate_emitter_voltage(self):
-        self.Ve = self.Re * self.Ie
+        self.calculate_output_impedance()
+        self.calculate_voltage_gain()
+        # self.calculate_input_coupling_capacitor()
+        # self.calculate_output_coupling_capacitor()
+        # self.calculate_emitter_capacitor()
+        self.determine_q_point()
+        print(self.voltage_divider_bias_dataclass)
 
     def calculate_base_current(self):
-        self.Ib = (self.Vb - bjt.Vbe) / (self.Rb_eqv + (self.Re * (bjt.hfe + 1)))
+        numerator = (self.vcc * (self.rbe / (self.rbe + self.rbc)) - self.transistor.vbe)
+        denominator = (((self.rbe * self.rbc) / (self.rbe + self.rbc)) + self.re * (self.transistor.hfe + 1))
+        self.voltage_divider_bias_dataclass.ib = numerator / denominator
 
     def calculate_collector_current(self):
-        self.Ic = self.Ib * bjt.hfe
+        self.voltage_divider_bias_dataclass.ic = self.transistor.hfe * self.voltage_divider_bias_dataclass.ib
 
     def calculate_emitter_current(self):
-        # self.Ie = (bjt.hfe + 1) * self.Ib
+        self.voltage_divider_bias_dataclass.ie = self.voltage_divider_bias_dataclass.ib + self.voltage_divider_bias_dataclass.ic
 
-        self.Ie = (self.Vb - bjt.Vbe) / ((self.Rb_eqv / (bjt.hfe + 1)) + self.Re)
+    def calculate_collector_voltage(self):
+        self.voltage_divider_bias_dataclass.vc = self.vcc - (self.voltage_divider_bias_dataclass.ic * self.rc)
+
+    def calculate_emitter_voltage(self):
+        self.voltage_divider_bias_dataclass.ve = self.re * self.voltage_divider_bias_dataclass.ie
+
+    def calculate_base_voltage(self):
+        self.voltage_divider_bias_dataclass.vb = self.voltage_divider_bias_dataclass.ve + self.transistor.vbe
+
+    def calculate_rbe_current(self):
+        self.voltage_divider_bias_dataclass.irbe = self.voltage_divider_bias_dataclass.vb / self.rbe
+
+    def calculate_rbc_current(self):
+        self.voltage_divider_bias_dataclass.irbc = self.voltage_divider_bias_dataclass.irbe + self.voltage_divider_bias_dataclass.ib
+
+    def calculate_collector_emitter_voltage(self):
+        # bias voltage
+        self.voltage_divider_bias_dataclass.vce = self.voltage_divider_bias_dataclass.vc - self.voltage_divider_bias_dataclass.ve
+
+    def determine_q_point(self):
+        ic_sat = round((self.vcc / (self.rc + self.re)) * 1000, 3)
+        vce_cutoff = self.vcc
+        v_th = (self.vcc * (self.rbe / (self.rbe + self.rbc)))
+        r_th = (self.rbe * self.rbc) / (self.rbe + self.rbc)    # equivalent base resistance
+        ic = round(((v_th - self.transistor.vbe) / (self.re + (r_th / self.transistor.hfe))) * 1000, 3)
+        vce_bias = round(self.vcc - (self.voltage_divider_bias_dataclass.ic / 1000 * (self.rc + self.re)), 3)
+        vb = round(self.transistor.vbe + (self.voltage_divider_bias_dataclass.ic / 1000 * self.re), 3)   # v_th is alternative, vb is more accurate
+
+        q_point: dict = {
+            "Vce(bias)/Vce(cutoff) [V]": f"[{vce_bias}/{vce_cutoff}]",
+            "ic/ic(sat)": f"[{ic}/{ic_sat}]"
+        }
+        self.voltage_divider_bias_dataclass.Q_point = q_point
 
     def calculate_voltage_gain(self):
-        # re - emitter resistance
-        internal_emitter_voltage_drop = 0.025
-        re = internal_emitter_voltage_drop / self.Ie
-        self.Av = self.Rc / (self.Re + re)
-
-        # 2nd method
-        gm = self.Ie / internal_emitter_voltage_drop
-        Gv = gm * self.Rc
+        """
+        With bypass capacitor Ce:   Av = Rout/re    make plot with set of frequency and show how gain is changing according to freq
+        Without bypass capacitor Ce:    Av = Rout/Re+re
+        """
+        re = (25 / self.voltage_divider_bias_dataclass.ie) / 1000
+        av = self.voltage_divider_bias_dataclass.z_out / re
+        self.voltage_divider_bias_dataclass.av = av
 
     def calculate_input_impedance(self):
-        # 1nd has mistake somewhere
-        internal_emitter_voltage_drop = 0.025
-        gm = self.Ie / internal_emitter_voltage_drop
-        re = internal_emitter_voltage_drop / self.Ie
-        r1 = self.Rb_eqv
-        r2 = ((bjt.hfe + 1) * (self.Re + re))
-        self.z_in = self.calculate_resistor_in_parallel(r1=r1, r2=r2)
+        # TODO: remove these / 1000, it depends on multiplier
+        # with bypass cap (AC): Zin = R1 || R2 || hfe*re
+        # without bypass cap (DC): Zin = R1 || R2 || hfe(Re + re)
+        re = (25 / self.voltage_divider_bias_dataclass.ie) / 1000   # emitter leg resistance, V/A to mV/mA
+        z_base_ac = ((self.transistor.hfe + 1) * re)
+        z_base_dc = ((self.transistor.hfe + 1) * (self.re + re))
+        r_th = ((self.rbe * self.rbc) / (self.rbe + self.rbc))      # base equivalent resistance
+        input_impedance = ((r_th * z_base_ac) / (r_th + z_base_ac)) / 1000
+        self.voltage_divider_bias_dataclass.Z_in = input_impedance
 
-        # 2nd method
-        r1 = self.Rb_eqv
-        r_pi = bjt.hfe / gm
-        self.z_in = self.calculate_resistor_in_parallel(r1=r1, r2=r_pi)
+    def calculate_output_impedance(self):
+        """
+        Zout = Rc || Rl     load is speaker or smth connected to collector of transistor
+        """
+        z_out = self.rc
+        self.voltage_divider_bias_dataclass.z_out = z_out
 
-    def calculate_bias_voltage(self):
-        self.Vce = self.Vc - self.Ve
+    def calculate_emitter_capacitor(self, frequency: int) -> float:
+        """
+        Emitter capacitor forms a high pass filter, frequencies above cutoff frequency got maximum gain
+        make plot with set of frequency and show how gain is changing according to freq
 
-    def calculate_resistor_in_parallel(self, r1, r2):
-        r_eqv = (r1 * r2) / (r1 + r2)
-        return r_eqv
+        Rule of thumb: Xc = 1/10 of Re at desired frequency
+        """
+        xc = 0.1 * self.re
+        c_emitter = 1 / (2 * math.pi * frequency * xc)
+        return c_emitter
 
+    def calculate_input_coupling_capacitor(self, frequency: int, z_in: float) -> float:
+        """z_in is considered only for AC application"""
+        c_in = 1 / (2 * math.pi * frequency * z_in)
+        return c_in
 
-# resistors = {
-#     "rc": 3 * 10**3,
-#     "re": 0 * 10**3,
-#     "rb_1": 500 * 10**3,
-#     "rb_2": 0 * 10**3
-# }
-
-resistors = {
-    "rc": 150,
-    "re": 150,
-    "rb_1": 30 * 10**3,
-    "rb_2": 20.9 * 10**3
-}
-
-
-
-# smth wrong here
-bjt = Bjt("2N2222", 60)
-bjt1 = Bjt("BC107", 200)
-
-t = Transistor()
-print(type(t))
-t.add_transistor(transistor=bjt)
-
-print(t.transistors["2N2222"])
-print(t.transistors["2N2222"].hfe)
-print(t(model="2N2222"))
-
-print(bjt)
-print(bjt1)
-print(bjt1 == bjt)
-print(bjt1 > bjt)
-
-
-
-a = VDBias(**resistors)
-# a.calculate()
-# a.setup_documentation()
+    def calculate_output_coupling_capacitor(self, frequency: int, z_out: float) -> float:
+        c_out = 1 / (2 * math.pi * frequency * z_out)
+        return c_out

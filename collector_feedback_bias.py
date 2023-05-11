@@ -3,7 +3,7 @@ Description: This class do calculations for Collector Feedback Bias.
 """
 
 
-class CollectorFeedback(object):
+class CollectorFeedbackBias(object):
     def __init__(self, transistor: 'Bjt', rb: float, rc: float, re: float, vcc: int):
         self.transistor: 'Bjt' = transistor
         self.Rb: float = rb

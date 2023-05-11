@@ -20,8 +20,9 @@ class TransistorsBlueprint:
             "hfe": 100,
             "type": "NPN"
         },
-    }
-                                                         )
+    })
+
+    transistors_fet = None
 
 
 @dataclass
