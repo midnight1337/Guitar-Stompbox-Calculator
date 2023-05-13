@@ -1,19 +1,13 @@
 """
-Date:
-
+Date: 2023-03-28
 Class: TransistorMeta
-Description: Singleton pattern, it's responsible only for one Transistor object creation.
+Description: Singleton pattern, it's responsible only for making sure, only one Transistor object is created.
 
 Class: Bjt
 Description: Bjt is a dataclass which contains only bjt transistor parameters.
 
 Class: Transistor
-Description:
-
-Transistor is initialised in Circuit class. It initialises and represents all transistors dataclasses(Bjt)
-TransistorMeta is metaclass used to make sure, only one Transistor instance was initialised in Circuit.
-
-
+Description: It provides and represents all transistors. Initialised in a Circuit class.
 """
 from dataclasses import dataclass, field
 from parts import TransistorsBlueprint
@@ -59,8 +53,11 @@ class Bjt(object):
 
 class Transistor(metaclass=TransistorMeta):
     def __init__(self, transistors_blueprint: type(TransistorsBlueprint)):
+        """
+        :param transistors_blueprint: TransistorsBlueprint Dataclass
+        """
         self.__transistors: dict[str, Bjt] = {}
-        self.transistors_blueprint: dict[str, dict[str, str | int]] = transistors_blueprint().transistors
+        self.__transistors_blueprint: dict[str, dict[str, str | int]] = transistors_blueprint().transistors
         self.initialise_bjt_transistors()
 
     def __call__(self, model: str) -> Bjt:
@@ -72,8 +69,8 @@ class Transistor(metaclass=TransistorMeta):
         return self.__transistors
 
     def initialise_bjt_transistors(self):
-        for q in self.transistors_blueprint:
-            new_transistor: Bjt = Bjt(**self.transistors_blueprint[q])
+        for q in self.__transistors_blueprint:
+            new_transistor: Bjt = Bjt(**self.__transistors_blueprint[q])
 
             if new_transistor.model not in self.__transistors.keys():
                 self.__transistors[new_transistor.model] = new_transistor

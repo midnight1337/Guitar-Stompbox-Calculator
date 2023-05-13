@@ -62,7 +62,7 @@ class ResistorsVoltageDivider(ResistorsAbstract):
 class Resistor(object):
     def __init__(self, resistors_blueprint: type(ResistorsBlueprint)):
         """
-        :param resistors_blueprint:
+        :param resistors_blueprint: ResistorsBlueprint dataclass
         """
         self.__resistors: ResistorsBlueprint = resistors_blueprint()
         self.__resistors_vd: ResistorsVoltageDivider = ResistorsVoltageDivider(**self.__resistors.voltage_divider)

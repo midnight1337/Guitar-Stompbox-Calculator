@@ -1,34 +1,69 @@
 """
-Date: 2023-03-28
-Class: Circuit
-Description: Circuit class is some kind of Manager. It acts like a real breadboard where you build a particular circuit,
-and then you measure your transistor biasing data.
+Date: 2023-05-11
+Class: BiasCircuit
+Description: This abstract class requires to pass parts necessary for circuit initialisation.
+It is inherited in all bias related classes.
 """
-from transistor import Transistor
-from resistor import Resistor
-from parts import TransistorsBlueprint, ResistorsBlueprint, Vcc
-from voltage_divider import VoltageDivider
-from collector_feedback import CollectorFeedback
+from abc import ABC, abstractmethod
+from transistor import Bjt
+from bias_data import BiasData
 
 
-class Circuit(object):
-    def __init__(self):
-        self.vcc: int = Vcc.VCC.value
-        self.transistor: Transistor = Transistor(transistors_blueprint=TransistorsBlueprint)
-        self.resistor: Resistor = Resistor(resistors_blueprint=ResistorsBlueprint)
-        self.voltage_divider: VoltageDivider = VoltageDivider.__new__(VoltageDivider)
-        self.collector_feedback: CollectorFeedback = CollectorFeedback.__new__(CollectorFeedback)
+class Circuit(ABC):
+    def __init__(self, vcc: int, transistor: Bjt, rc: float, re: float):
+        """
+        :param vcc:
+        :param transistor:
+        :param rc:
+        :param re:
+        """
+        self.vcc: int = vcc
+        self.transistor: Bjt = transistor
+        self.rc: float = rc
+        self.re: float = re
+        self.bias_data: BiasData = BiasData.__new__(BiasData)
+    
+    def __str__(self):
+        return self.__class__.__name__
 
-    def breadboard_voltage_divider_bias(self, model: str):
-        self.voltage_divider.__init__(vcc=self.vcc, transistor=self.transistor(model=model),
-                                      **self.resistor.voltage_divider)
+    def get_bias_data(self):
+        return self.bias_data.get_data()
 
-    def calculate_voltage_divider_bias(self):
-        self.voltage_divider.calculate()
+    def get_circuit_parts(self):
+        return self.__dict__
 
-    def breadboard_collector_feedback_bias(self, model: str):
-        self.collector_feedback.__init__(vcc=self.vcc, transistor=self.transistor(model=model),
-                                         **self.resistor.collector_feedback)
+    @abstractmethod
+    def calculate_bias(self): pass
 
-    def calculate_collector_feedback_bias(self):
-        self.collector_feedback.calculate()
+    @abstractmethod
+    def calculate_base_current(self): pass
+
+    @abstractmethod
+    def calculate_collector_current(self): pass
+
+    @abstractmethod
+    def calculate_emitter_current(self): pass
+
+    @abstractmethod
+    def calculate_collector_voltage(self): pass
+
+    @abstractmethod
+    def calculate_emitter_voltage(self): pass
+
+    @abstractmethod
+    def calculate_base_voltage(self): pass
+
+    @abstractmethod
+    def calculate_collector_emitter_voltage(self): pass
+
+    @abstractmethod
+    def calculate_input_impedance(self): pass
+
+    @abstractmethod
+    def calculate_output_impedance(self): pass
+
+    @abstractmethod
+    def calculate_voltage_gain(self): pass
+
+    @abstractmethod
+    def determine_q_point(self): pass
