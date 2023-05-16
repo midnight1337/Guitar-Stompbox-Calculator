@@ -1,24 +1,69 @@
 """
-Circuit is some kind of manager of the whole tool.
+Date: 2023-05-11
+Class: BiasCircuit
+Description: This abstract class requires to pass parts necessary for circuit initialisation.
+It is inherited in all bias related classes.
 """
-from transistor import Transistor
-from resistor import Resistor
-from collector_feedback import CollectorFeedback
-from voltage_divider import VoltageDivider
+from abc import ABC, abstractmethod
+from transistor import Bjt
+from bias_data import BiasData
 
 
-class Circuit(object):
-    def __init__(self, transistors_blueprint: dict[str, dict[str, str | int]], resistors_blueprint: dict[str, int | float], vcc: int = 9):
-        self.transistor: Transistor = Transistor(transistors_blueprint=transistors_blueprint)
-        self.resistors: Resistor = Resistor(**resistors_blueprint)
-        self.vcc = vcc
+class Circuit(ABC):
+    def __init__(self, vcc: int, transistor: Bjt, rc: float, re: float):
+        """
+        :param vcc:
+        :param transistor:
+        :param rc:
+        :param re:
+        """
+        self.vcc: int = vcc
+        self.transistor: Bjt = transistor
+        self.rc: float = rc
+        self.re: float = re
+        self.bias_data: BiasData = BiasData.__new__(BiasData)
+    
+    def __str__(self):
+        return self.__class__.__name__
 
-    def collector_feedback(self, model: str):
-        CollectorFeedback(transistor=self.transistor(model=model), **self.resistors.collector_feedback(), vcc=self.vcc).calculate_and_read_values()
+    def get_bias_data(self):
+        return self.bias_data.get_data()
 
-    def voltage_divider(self, model: str):
-        VoltageDivider(transistor=self.transistor(model=model), **self.resistors.voltage_divider(), vcc=self.vcc).calculate_and_read_values()
+    def get_circuit_parts(self):
+        return self.__dict__
 
-    def collector_feedback_for_all_initialised_transistors(self):
-        for q in self.transistor.transistors:
-            CollectorFeedback(transistor=self.transistor(model=q), **self.resistors.collector_feedback(), vcc=self.vcc).calculate_and_read_values()
+    @abstractmethod
+    def calculate_bias(self): pass
+
+    @abstractmethod
+    def calculate_base_current(self): pass
+
+    @abstractmethod
+    def calculate_collector_current(self): pass
+
+    @abstractmethod
+    def calculate_emitter_current(self): pass
+
+    @abstractmethod
+    def calculate_collector_voltage(self): pass
+
+    @abstractmethod
+    def calculate_emitter_voltage(self): pass
+
+    @abstractmethod
+    def calculate_base_voltage(self): pass
+
+    @abstractmethod
+    def calculate_collector_emitter_voltage(self): pass
+
+    @abstractmethod
+    def calculate_input_impedance(self): pass
+
+    @abstractmethod
+    def calculate_output_impedance(self): pass
+
+    @abstractmethod
+    def calculate_voltage_gain(self): pass
+
+    @abstractmethod
+    def determine_q_point(self): pass

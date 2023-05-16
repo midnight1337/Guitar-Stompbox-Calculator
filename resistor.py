@@ -1,41 +1,77 @@
 """
-Resistor is initialised in Circuit class. It represents a resistors used in bias circuits.
-ResistorMetaclass it's used as Singleton pattern, and to multiply resistor values by a multiplier.
+Date: 2023-03-28
+Description: This file provides a different levels of resistors abstraction.
+
+Class: ResistorMeta
+Description: It's a Singleton pattern class, which allows only ONE object creation of inherited classes.
+
+Class: ResistorsAbstract
+Description: It provides an interface for particular circuit's resistors.
+
+Class: ResistorsCollectorFeedback
+Description: Contains resistors needed for Collector Feedback circuit.
+
+Class: ResistorsVoltageDivider
+Description: Contains resistors needed for Voltage Divider circuit.
+
+Class: Resistor
+Description: It provides resistor values for desired bias circuit. It's Initialised in Circuit class.
 """
+from abc import ABC, ABCMeta, abstractmethod
+from parts import ResistorsBlueprint
 
 
-class ResistorMeta(type):
+class ResistorMeta(ABCMeta):
     __instance = None
 
     def __call__(cls, *args, **kwargs):
         if cls.__instance is not None:
-            raise Exception("Only one Resistor object is allowed!")
+            raise Exception(f"Only one {cls.__name__} object is allowed!")
         else:
-            for k in kwargs:
-                kwargs[k] = kwargs[k] * kwargs['multiplier']
-            kwargs.pop('multiplier')
-            return super().__call__(*args, **kwargs)
+            cls.__instance = super().__call__(*args, **kwargs)
+            return cls.__instance
 
 
-class Resistor(metaclass=ResistorMeta):
-    def __init__(self, rb: float = None, rbc: float = None, rbe: float = None, rc: float = None, re: float = None, multiplier: int = 1):
-        self.rb: float = rb
-        self.rbc: float = rbc
-        self.rbe: float = rbe
+class ResistorsAbstract(ABC, metaclass=ResistorMeta):
+    @abstractmethod
+    def __init__(self, rc: float, re: float):
         self.rc: float = rc
         self.re: float = re
 
-    def __call__(self):
-        # resistors = {k: v * self.multiplier for k, v in self.__dict__.items() if v is not None}
-        return self.__dict__.items()
-
     @property
     def resistors(self):
-        """TODO: Propery vs __call__??"""
-        return self.__dict__.items()
+        return self.__dict__
 
-    def collector_feedback(self) -> dict[str, float]:
-        return {"rb": self.rb, "rc": self.rc, "re": self.re}
+    def __call__(self):
+        return self.__class__.__name__
 
-    def voltage_divider(self) -> dict[str, float]:
-        return {"rbc": self.rbc, "rbe": self.rbe, "rc": self.rc, "re": self.re}
+
+class ResistorsCollectorFeedback(ResistorsAbstract):
+    def __init__(self, rb: float, rc: float, re: float):
+        super().__init__(rc=rc, re=re)
+        self.rb: float = rb
+
+
+class ResistorsVoltageDivider(ResistorsAbstract):
+    def __init__(self, rc: float, re: float, rbc: float, rbe: float):
+        super().__init__(rc=rc, re=re)
+        self.rbc: float = rbc
+        self.rbe: float = rbe
+
+
+class Resistor(object):
+    def __init__(self, resistors_blueprint: type(ResistorsBlueprint)):
+        """
+        :param resistors_blueprint: ResistorsBlueprint dataclass
+        """
+        self.__resistors: ResistorsBlueprint = resistors_blueprint()
+        self.__resistors_vd: ResistorsVoltageDivider = ResistorsVoltageDivider(**self.__resistors.voltage_divider)
+        self.__resistors_cf: ResistorsCollectorFeedback = ResistorsCollectorFeedback(**self.__resistors.collector_feedback)
+
+    @property
+    def voltage_divider(self):
+        return self.__resistors_vd.resistors
+
+    @property
+    def collector_feedback(self):
+        return self.__resistors_cf.resistors
