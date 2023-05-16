@@ -29,7 +29,8 @@ class BiasData:
     ve: float
     vce: float
     av: float
-    z_in: float
+    z_in_ac: float
+    z_in_dc: float
     z_out: float
     q_point: list[list]
 
@@ -40,12 +41,13 @@ class BiasData:
         self.ib *= 1000000
         self.ic *= 1000
         self.ie *= 1000
-        self.z_in /= 1000
+        self.z_in_ac /= 1000
+        self.z_in_dc /= 1000
         self.z_out /= 1000
 
         for k, v in self.__dict__.items():
-            if not k == "q_point":
+            if k == "q_point":
+                self.q_point[0][0] = self.vce
+                self.q_point[1][0] = self.ic
+            else:
                 self.__dict__[k] = round(v, 3)
-
-        self.q_point[0][0] = self.vce
-        self.q_point[1][0] = self.ic

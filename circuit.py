@@ -1,8 +1,8 @@
 """
 Date: 2023-05-11
-Class: BiasCircuit
-Description: This abstract class requires to pass parts necessary for circuit initialisation.
-It is inherited in all bias related classes.
+Class: Circuit
+Description: This abstract class requires to initialise methods related to biasing,
+and pass parts necessary for circuit breadboard. It is inherited in all bias related classes.
 """
 from abc import ABC, abstractmethod
 from transistor import Bjt

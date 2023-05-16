@@ -3,7 +3,7 @@ Author: Kamil Koltowski
 E-mail: kamil.koltows@gmail.com
 Description: This tool provides ability to do all calculations, necessary for designing guitar stomp-boxes circuits.
 TODO:
-1) Refactor whole code
+1) Refactor whole code -> Should resistor.py be implemented with more layers of abstraction? (refer to capacitor.py)
 2) Make bias circuits work ok with converting values
 3) Add capacitor calculations
 4) Plot q value

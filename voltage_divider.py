@@ -5,6 +5,7 @@ Description: This class represents Voltage Divider Bias circuit, and do all rela
 
 https://www.electronics-tutorials.ws/amplifier/common-collector-amplifier.html
 https://www.electronics-tutorials.ws/amplifier/input-impedance-of-an-amplifier.html
+https://www.diystompboxes.com/biascalc/ffbias.html
 """
 import math
 from transistor import Bjt
@@ -56,7 +57,6 @@ class VoltageDivider(Circuit):
         self.bias_data.vb = self.bias_data.ve + self.transistor.vbe
 
     def calculate_collector_emitter_voltage(self):
-        # bias voltage
         self.bias_data.vce = self.bias_data.vc - self.bias_data.ve
 
     def determine_q_point(self):
@@ -77,27 +77,30 @@ class VoltageDivider(Circuit):
 
     def calculate_voltage_gain(self):
         """
-        With bypass capacitor Ce:   Av = Rout/re    make plot with set of frequency and show how gain is changing according to freq
+        With bypass capacitor Ce:   Av = Rout/re + (Re || Xc(Ce))    make plot with set of frequency and show how gain is changing according to freq
         Without bypass capacitor Ce:    Av = Rout/Re+re
+        re - AC emitter leg resistance
         """
-        re = (25 / self.bias_data.ie) / 1000
-        av = self.bias_data.z_out / re
+        re = (self.transistor.internal_emitter_voltage_drop / self.bias_data.ie)
+        av = self.bias_data.z_out / (self.re + re)
         self.bias_data.av = av
 
     def calculate_input_impedance(self):
-        # with bypass cap (AC): Zin = R1 || R2 || hfe*re
-        # without bypass cap (DC): Zin = R1 || R2 || hfe(Re + re)
-        re = (25 / self.bias_data.ie) / 1000  # emitter leg resistance, V/A to mV/mA
-        z_base_ac = ((self.transistor.hfe + 1) * re)
-        z_base_dc = ((self.transistor.hfe + 1) * (self.re + re))
-        r_th = ((self.rbe * self.rbc) / (self.rbe + self.rbc))  # base equivalent resistance
-        input_impedance = ((r_th * z_base_ac) / (r_th + z_base_ac))
-        self.bias_data.z_in = input_impedance
+        # with emitter bypass cap: Zin = R1 || R2 || hfe*re
+        # without emitter bypass cap: Zin = R1 || R2 || hfe(Re + re)
+        re = (self.transistor.internal_emitter_voltage_drop / self.bias_data.ie)
+        r_thevenin = ((self.rbe * self.rbc) / (self.rbe + self.rbc))  # base equivalent resistance
+
+        base_impedance_ac = ((self.transistor.hfe + 1) * re)
+        base_impedance_dc = ((self.transistor.hfe + 1) * (self.re + re))
+
+        input_impedance_ac = ((r_thevenin * base_impedance_ac) / (r_thevenin + base_impedance_ac))
+        input_impedance_dc = ((r_thevenin * base_impedance_dc) / (r_thevenin + base_impedance_dc))
+
+        self.bias_data.z_in_ac = input_impedance_ac
+        self.bias_data.z_in_dc = input_impedance_dc
 
     def calculate_output_impedance(self):
-        """
-        Zout = Rc || Rl     load is speaker or smth connected to collector of transistor
-        """
         z_out = self.rc
         self.bias_data.z_out = z_out
 
