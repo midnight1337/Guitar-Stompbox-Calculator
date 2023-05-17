@@ -6,6 +6,7 @@ Description: This class represents Voltage Divider Bias circuit, and do all rela
 https://www.electronics-tutorials.ws/amplifier/common-collector-amplifier.html
 https://www.electronics-tutorials.ws/amplifier/input-impedance-of-an-amplifier.html
 https://www.diystompboxes.com/biascalc/ffbias.html
+https://www.electronics-tutorials.ws/amplifier/amp_2.html
 """
 import math
 from transistor import Bjt
@@ -13,8 +14,8 @@ from circuit import Circuit
 
 
 class VoltageDivider(Circuit):
-    def __init__(self, vcc: int, transistor: Bjt, rc: float, re: float, rbc: float, rbe: float):
-        super().__init__(vcc=vcc, transistor=transistor, rc=rc, re=re)
+    def __init__(self, vcc: int, transistor: Bjt, rc: float, re: float, rbc: float, rbe: float, cc: float, ce: float, cb: float):
+        super().__init__(vcc=vcc, transistor=transistor, rc=rc, re=re, cc=cc, ce=ce, cb=cb)
         self.rbc: float = rbc
         self.rbe: float = rbe
 
@@ -76,35 +77,50 @@ class VoltageDivider(Circuit):
         self.bias_data.q_point = [[vce_bias, vce_cutoff], [ic, ic_saturation]]
 
     def calculate_voltage_gain(self):
+        transistor_re = (self.transistor.internal_emitter_voltage_drop / self.bias_data.ie)
+        if self.ce != 0:
+            self.calculate_voltage_gain_for_ac_application(transistor_re=transistor_re)
+        else:
+            self.calculate_voltage_gain_for_dc_application(transistor_re=transistor_re)
+
+    def calculate_voltage_gain_for_ac_application(self, transistor_re: float):
         """
-        With bypass capacitor Ce:   Av = Rout/re + (Re || Xc(Ce))    make plot with set of frequency and show how gain is changing according to freq
-        Without bypass capacitor Ce:    Av = Rout/Re+re
-        re - AC emitter leg resistance
+        TODO: plot it with Xc changing in frequency
+        Voltage gain with bypass capacitor Ce:   Av = Rout/re + (Re || Xc(Ce))
         """
-        re = (self.transistor.internal_emitter_voltage_drop / self.bias_data.ie)
-        av = self.bias_data.z_out / (self.re + re)
+        av = self.bias_data.z_out / transistor_re
+        self.bias_data.av = av
+
+    def calculate_voltage_gain_for_dc_application(self, transistor_re: float):
+        av = self.bias_data.z_out / (self.re + transistor_re)
         self.bias_data.av = av
 
     def calculate_input_impedance(self):
         # with emitter bypass cap: Zin = R1 || R2 || hfe*re
         # without emitter bypass cap: Zin = R1 || R2 || hfe(Re + re)
-        re = (self.transistor.internal_emitter_voltage_drop / self.bias_data.ie)
+        transistor_re = (self.transistor.internal_emitter_voltage_drop / self.bias_data.ie)
         r_thevenin = ((self.rbe * self.rbc) / (self.rbe + self.rbc))  # base equivalent resistance
 
-        base_impedance_ac = ((self.transistor.hfe + 1) * re)
-        base_impedance_dc = ((self.transistor.hfe + 1) * (self.re + re))
+        if self.ce != 0:
+            self.calculate_input_impedance_for_ac_application(transistor_re=transistor_re, r_thevenin=r_thevenin)
+        else:
+            self.calculate_input_impedance_for_dc_application(transistor_re=transistor_re, r_thevenin=r_thevenin)
 
+    def calculate_input_impedance_for_ac_application(self, transistor_re: float, r_thevenin: float):
+        base_impedance_ac = ((self.transistor.hfe + 1) * transistor_re)
         input_impedance_ac = ((r_thevenin * base_impedance_ac) / (r_thevenin + base_impedance_ac))
-        input_impedance_dc = ((r_thevenin * base_impedance_dc) / (r_thevenin + base_impedance_dc))
-
         self.bias_data.z_in_ac = input_impedance_ac
+
+    def calculate_input_impedance_for_dc_application(self, transistor_re: float, r_thevenin: float):
+        base_impedance_dc = ((self.transistor.hfe + 1) * (self.re + transistor_re))
+        input_impedance_dc = ((r_thevenin * base_impedance_dc) / (r_thevenin + base_impedance_dc))
         self.bias_data.z_in_dc = input_impedance_dc
 
     def calculate_output_impedance(self):
         z_out = self.rc
         self.bias_data.z_out = z_out
 
-    def calculate_emitter_capacitor(self, frequency: int) -> float:
+    def calculate_emitter_capacitor(self, frequency: int):
         """
         Emitter capacitor forms a high pass filter, frequencies above cutoff frequency got maximum gain
         make plot with set of frequency and show how gain is changing according to freq
@@ -112,14 +128,11 @@ class VoltageDivider(Circuit):
         Rule of thumb: Xc = 1/10 of Re at desired frequency
         """
         xc = 0.1 * self.re
-        c_emitter = 1 / (2 * math.pi * frequency * xc)
-        return c_emitter
+        self.ce = 1 / (2 * math.pi * frequency * xc)
 
-    def calculate_input_coupling_capacitor(self, frequency: int, z_in: float) -> float:
+    def calculate_input_coupling_capacitor(self, frequency: int, z_in: float):
         """z_in is considered only for AC application"""
-        c_in = 1 / (2 * math.pi * frequency * z_in)
-        return c_in
+        self.cb = 1 / (2 * math.pi * frequency * z_in)
 
-    def calculate_output_coupling_capacitor(self, frequency: int, z_out: float) -> float:
-        c_out = 1 / (2 * math.pi * frequency * z_out)
-        return c_out
+    def calculate_output_coupling_capacitor(self, frequency: int, z_out: float):
+        self.cc = 1 / (2 * math.pi * frequency * z_out)

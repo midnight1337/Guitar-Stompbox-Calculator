@@ -10,17 +10,23 @@ from bias_data import BiasData
 
 
 class Circuit(ABC):
-    def __init__(self, vcc: int, transistor: Bjt, rc: float, re: float):
+    def __init__(self, vcc: int, transistor: Bjt, rc: float, re: float, cc: float, ce: float, cb: float):
         """
-        :param vcc:
-        :param transistor:
-        :param rc:
-        :param re:
+        :param vcc: Voltage Supply
+        :param transistor: Transistor object
+        :param rc: Collector resistor
+        :param re: Emitter resistor
+        :param cc: Collector capacitor
+        :param ce: Emitter capacitor
+        :param cb: Base capacitor
         """
         self.vcc: int = vcc
         self.transistor: Bjt = transistor
         self.rc: float = rc
         self.re: float = re
+        self.cc: float = cc
+        self.ce: float = ce
+        self.cb: float = cb
         self.bias_data: BiasData = BiasData.__new__(BiasData)
     
     def __str__(self):

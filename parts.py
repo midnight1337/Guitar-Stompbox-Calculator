@@ -10,6 +10,9 @@ Description: Blueprint for all transistor models
 
 Class: ResistorsBlueprint
 Description: Blueprint for resistors in particular bias circuits.
+
+Class: CapacitorsBlueprint
+Description: Blueprint for capacitors in circuit
 """
 from dataclasses import dataclass, field
 from enum import Enum
@@ -41,6 +44,9 @@ class TransistorsBlueprint:
 
 @dataclass
 class ResistorsBlueprint:
+    """
+    MULTIPLIER = 1000 stands for KOhm
+    """
     MULTIPLIER = 10 ** 3
 
     voltage_divider: dict[str, int | float] = field(default_factory=lambda: {
@@ -55,6 +61,31 @@ class ResistorsBlueprint:
         "rc": 47,
         "re": 0.1,
     })
+
+    def __post_init__(self):
+        for k, v in self.voltage_divider.items():
+            self.voltage_divider[k] = v * self.MULTIPLIER
+        for k, v in self.collector_feedback.items():
+            self.collector_feedback[k] = v * self.MULTIPLIER
+
+
+@dataclass
+class CapacitorsBlueprint:
+    """
+    MULTIPLIER = 1 stands for 1uF
+    """
+    MULTIPLIER = 1
+    voltage_divider = {
+        "ce": 22,
+        "cc": 1,
+        "cb": 1
+    }
+
+    collector_feedback = {
+        "ce": 22,
+        "cc": 1,
+        "cb": 1
+    }
 
     def __post_init__(self):
         for k, v in self.voltage_divider.items():

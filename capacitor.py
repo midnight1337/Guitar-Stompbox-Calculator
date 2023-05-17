@@ -17,6 +17,7 @@ Description: TODO: might not be done, similar to filters
 """
 from abc import ABC, ABCMeta, abstractmethod
 from math import pi, inf
+from parts import CapacitorsBlueprint
 
 
 class CapacitorMeta(ABCMeta):
@@ -32,62 +33,21 @@ class CapacitorMeta(ABCMeta):
 
 class CapacitorAbstract(ABC, metaclass=CapacitorMeta):
     @abstractmethod
-    def __init__(self, capacitance: float):
-        self.capacitance: float = capacitance
+    def __init__(self, ce: float, cc: float, cb: float):
+        self.emitter_capacitor: float = ce
+        self.collector_capacitor: float = cc
+        self.base_capacitor: float = cb
 
     @property
-    def capacitance(self) -> float:
-        return self.capacitance
-
-    @capacitance.setter
-    def capacitance(self, capacitance: float):
-        self.capacitance = capacitance
-
-    def calculate_capacitance(self, frequency: int, reactance: float) -> float:
-        """
-        :param frequency: Cutoff frequency
-        :param reactance: Desired resistance at given frequency
-        :return:
-        """
-        return 1 / (2 * pi * frequency * reactance)
-
-    def calculate_reactance(self, frequency: int) -> float:
-        if frequency == 0:
-            return inf
-        return 1 / (2 * pi * frequency * self.capacitance)
-
-
-class EmitterCapacitor(CapacitorAbstract):
-    def __init__(self, capacitance: float):
-        super().__init__(capacitance=capacitance)
-
-
-class CollectorCapacitor(CapacitorAbstract):
-    def __init__(self, capacitance: float):
-        super().__init__(capacitance=capacitance)
-
-
-class BaseCapacitor(CapacitorAbstract):
-    def __init__(self, capacitance: float):
-        super().__init__(capacitance=capacitance)
-
-
-class Capacitor:
-    def __init__(self):
-        self.emitter_capacitor = EmitterCapacitor.__new__(EmitterCapacitor)
-        self.collector_capacitor = CollectorCapacitor.__new__(CollectorCapacitor)
-        self.base_capacitor = BaseCapacitor.__new__(BaseCapacitor)
-
-    @property
-    def emitter_capacitor(self):
+    def emitter_capacitor(self) -> float:
         return self.emitter_capacitor
 
     @emitter_capacitor.setter
     def emitter_capacitor(self, capacitance: float):
-        self.emitter_capacitor.capacitance = capacitance
+        self.emitter_capacitor = capacitance
 
     @property
-    def collector_capacitor(self):
+    def collector_capacitor(self) -> float:
         return self.emitter_capacitor
 
     @collector_capacitor.setter
@@ -95,9 +55,57 @@ class Capacitor:
         self.collector_capacitor.capacitance = capacitance
 
     @property
-    def base_capacitor(self):
+    def base_capacitor(self) -> float:
         return self.base_capacitor
 
     @base_capacitor.setter
     def base_capacitor(self, capacitance: float):
         self.base_capacitor.capacitance = capacitance
+
+    @staticmethod
+    def calculate_capacitance(frequency: int, reactance: float) -> float:
+        """
+        Calculate capacitor's value for given reactance and frequency
+        :param frequency: Cutoff frequency
+        :param reactance: Desired resistance at given frequency
+        :return:
+        """
+        return 1 / (2 * pi * frequency * reactance)
+
+    @staticmethod
+    def calculate_reactance(frequency: int, capacitance: float) -> float:
+        """
+        Calculate capacitor's reactance at given frequency and capacitor's value
+        :param frequency: Cutoff frequency
+        :param capacitance: Capacitor's value
+        :return:
+        """
+        if frequency == 0:
+            return inf
+        return 1 / (2 * pi * frequency * capacitance)
+
+
+class CapacitorsVoltageDivider(CapacitorAbstract):
+    def __init__(self, ce: float, cc: float, cb: float):
+        super().__init__(ce=ce, cc=cc, cb=cb)
+
+
+class CapacitorsCollectorFeedback(CapacitorAbstract):
+    def __init__(self, ce: float, cc: float, cb: float):
+        super().__init__(ce=ce, cc=cc, cb=cb)
+
+
+class Capacitor:
+    def __init__(self, capacitors_blueprint: type(CapacitorsBlueprint)):
+        self.__capacitors: CapacitorsBlueprint = capacitors_blueprint()
+        print(self.__capacitors.voltage_divider)
+        self.__capacitors_vd: CapacitorsVoltageDivider = CapacitorsVoltageDivider(**self.__capacitors.voltage_divider)
+        self.__capacitors_cf: CapacitorsCollectorFeedback = CapacitorsCollectorFeedback(**self.__capacitors.collector_feedback)
+
+    @property
+    def voltage_divider(self):
+        return self.__capacitors_vd
+
+    @property
+    def collector_feedback(self):
+        return self.__capacitors_cf

@@ -32,16 +32,51 @@ from breadboard import Breadboard
 #     "multiplier": 10 ** 3
 # }
 
+def calculate_input_impedance_detailed():
+    """
+    Formula: Z_in = Xc_in(f) + ( (R1 || R2) || (re' + (Re || Xc_e(f))) )
+    :return:
+    """
+    frequency_range = 1000
+    c_in = 1
+    c_e = 22
+    r1 = 90000
+    r2 = 22000
+    transistor_re = 25  # calculate it with emitter current
+    hfe = 100
+    re = 1500
+    result = []
+
+    def calculate_xc(frequency, capacitance):
+        capacitance = capacitance / 1000000
+        xc = 1 / (2 * 3.14 * frequency * capacitance)
+        print(xc)
+        return xc
+
+    def calculate_z_in():
+        for f in range(1, frequency_range):
+            xc_in = calculate_xc(f, c_in)
+            xc_e = calculate_xc(f, c_e)
+
+            a = (r1*r2)/(r1+r2)
+            b = (((re * xc_e)/(re + xc_e)) + transistor_re) * hfe
+            c = (a*b)/(a+b)
+            formula = (xc_in + c)
+            result.append(formula)
+
+    calculate_z_in()
+    print(result)
 
 def main():
-    breadboard = Breadboard()
-
-    breadboard.breadboard_voltage_divider_circuit(model="2N2222")
-    breadboard.calculate_voltage_divider_bias()
-    breadboard.read_voltage_divider_bias_data()
-
-    breadboard.breadboard_collector_feedback_circuit(model="2N2222")
-    breadboard.calculate_collector_feedback_bias()
+    calculate_input_impedance_detailed()
+    # breadboard = Breadboard()
+    #
+    # breadboard.breadboard_voltage_divider_circuit(model="2N2222")
+    # breadboard.calculate_voltage_divider_bias()
+    # breadboard.read_voltage_divider_bias_data()
+    #
+    # breadboard.breadboard_collector_feedback_circuit(model="2N2222")
+    # breadboard.calculate_collector_feedback_bias()
 
 
 if __name__ == "__main__":

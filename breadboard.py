@@ -6,7 +6,8 @@ and then you measure your transistor biasing data.
 """
 from transistor import Transistor
 from resistor import Resistor
-from parts import TransistorsBlueprint, ResistorsBlueprint, Vcc
+from capacitor import Capacitor
+from parts import TransistorsBlueprint, ResistorsBlueprint, CapacitorsBlueprint, Vcc
 from voltage_divider import VoltageDivider
 from collector_feedback import CollectorFeedback
 
@@ -16,6 +17,8 @@ class Breadboard(object):
         self.vcc: int = Vcc.VCC.value
         self.transistor: Transistor = Transistor(transistors_blueprint=TransistorsBlueprint)
         self.resistor: Resistor = Resistor(resistors_blueprint=ResistorsBlueprint)
+        self.capacitor: Capacitor = Capacitor(capacitors_blueprint=CapacitorsBlueprint)
+
         self.voltage_divider: VoltageDivider = VoltageDivider.__new__(VoltageDivider)
         self.collector_feedback: CollectorFeedback = CollectorFeedback.__new__(CollectorFeedback)
 
