@@ -98,12 +98,12 @@ class CapacitorsCollectorFeedback(CapacitorAbstract):
 class Capacitor:
     def __init__(self, capacitors_blueprint: type(CapacitorsBlueprint)):
         self.__capacitors: CapacitorsBlueprint = capacitors_blueprint()
-        print(self.__capacitors.voltage_divider)
         self.__capacitors_vd: CapacitorsVoltageDivider = CapacitorsVoltageDivider(**self.__capacitors.voltage_divider)
         self.__capacitors_cf: CapacitorsCollectorFeedback = CapacitorsCollectorFeedback(**self.__capacitors.collector_feedback)
 
     @property
     def voltage_divider(self):
+        # return CapacitorsVoltageDivider(**self.__capacitors.voltage_divider)
         return self.__capacitors_vd
 
     @property

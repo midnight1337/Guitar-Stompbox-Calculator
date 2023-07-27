@@ -15,6 +15,11 @@ from circuit import Circuit
 
 class VoltageDivider(Circuit):
     def __init__(self, vcc: int, transistor: Bjt, rc: float, re: float, rbc: float, rbe: float, cc: float, ce: float, cb: float):
+        """
+        def __init__(self, vcc: int, transistor: Bjt, resistors, capacitors:
+            self.re = resistors.re
+            etc...
+        """
         super().__init__(vcc=vcc, transistor=transistor, rc=rc, re=re, cc=cc, ce=ce, cb=cb)
         self.rbc: float = rbc
         self.rbe: float = rbe

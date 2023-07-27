@@ -1,7 +1,7 @@
 """
 Date: 2023-05-13
 Class: BiasData
-Description: This dataclass purpose is to store calculated bias data in circuit classes
+Description: This dataclass purpose is to store calculated bias data in related circuit classes
 """
 from dataclasses import dataclass
 

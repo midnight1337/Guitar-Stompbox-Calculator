@@ -62,7 +62,7 @@ def calculate_input_impedance_detailed():
             b = (((re * xc_e)/(re + xc_e)) + transistor_re) * hfe
             c = (a*b)/(a+b)
             formula = (xc_in + c)
-            result.append(formula)
+            result.append(formula)  # use generator here
 
     calculate_z_in()
     print(result)
